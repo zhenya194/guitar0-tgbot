@@ -49,6 +49,6 @@ async def cmd_help(message: types.Message):
     await message.answer(f"<b>Commands for Guitar 0 bot:</b>\n\n"
         f"/start - перезапустить бота\n"
         f"/help - показать это сообщение\n"
-        f"/fb - обратная связь\n"
-        f"/lessons - уроки\n",
+        f"/fb - отправить сообщение для обратной связи\n"
+        f"/lessons - название песни урока, ссылка на видео и т.п.\n",
         parse_mode="HTML")
