@@ -26,7 +26,7 @@ async def cmd_lessons(message: types.Message, command: CommandObject):
     if not command.args:
         return await message.answer(f"Пожалуста, напишите номер урока после /lessons. Пример: <code>/lessons 18</code>", parse_mode="HTML")
         return
-    int_commands_arg = int(command.args) - 1
+    int_commands_arg = int(command.args)
 
     title: str = data[int_commands_arg]["title"]
     video_url: str = data[int_commands_arg]["video_url"]
