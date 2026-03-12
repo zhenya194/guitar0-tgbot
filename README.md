@@ -1,12 +1,12 @@
 # guitar0-tgbot
 
-Guitar 0 TG bot
+Guitar 0 TG бот
 
 ## Libraries
 
-This project uses `aiogram`, `pydantic-settings`, `python-dotenv`, `requests`, `sqlite` and Guitar0 API.
+Этот проект использует `aiogram`, `pydantic-settings`, `python-dotenv`, `requests`, `sqlite` и Guitar0 API.
 
-Made on 3.14.2 Python version.
+Создано на 3.14.2 Python версии.
 
 > [!NOTE]
-> This is not offical tg bot of Guitar 0.
+> Это не официальный Guitar 0 tg бот.
