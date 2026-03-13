@@ -29,4 +29,3 @@ create_and_install_win_ps:
 	pip install pydantic-settings
 	pip install python-dotenv
 	pip install requests
-	source .venv/bin/activate
