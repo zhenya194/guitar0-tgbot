@@ -12,7 +12,7 @@ corrent_lesson: int = 0
 @router.message(Command("start"))
 async def cmd_start(message: types.Message):
     db.add_user(message.from_user.id, message.from_user.full_name)
-    await message.answer(f"Здравствуйте, {message.from_user.first_name}! Используйте команду /help что бы получить сообщение с помщью по командах.")
+    await message.answer(f"Здравствуйте, {message.from_user.first_name}! Используйте команду /help что бы получить сообщение с помощью по командах.")
 
 @router.message(Command("fb"))
 async def cmd_feedback(message: types.Message, command: CommandObject):
