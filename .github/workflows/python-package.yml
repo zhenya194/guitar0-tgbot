@@ -13,10 +13,11 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    timeout-minutes: 2.5
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.12", "3.13", "3.14"]
 
     steps:
     - uses: actions/checkout@v4
@@ -27,7 +28,6 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m venv .venv
         pip install aiogram
         pip install pydantic-settings
         pip install python-dotenv
