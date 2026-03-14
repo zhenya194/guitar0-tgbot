@@ -63,7 +63,7 @@ async def cmd_lessons(message: types.Message, command: CommandObject):
 
 @router.message(Command("help"))
 async def cmd_help(message: types.Message):
-    return await message.answer(f"<b>Commands for Guitar 0 bot:</b>\n\n"
+    return await message.answer(f"Commands for <b>Guitar 0 bot</b>:\n\n"
         f"/start - перезапустить бота\n"
         f"/help - показать это сообщение\n"
         f"/fb - отправить сообщение для обратной связи\n"
