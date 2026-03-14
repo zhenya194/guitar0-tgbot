@@ -1,5 +1,5 @@
-`/start` - перезапустить бота
-`/help` - показать сообщение от бота, в котором будет список команд и их значение
-`/fb` - отправить сообщение для обратной связи
-`/lessons` - название песни урока, ссылка на видео и т.п.
-`/chords` - получить аккорды
+`/start` - restart bot
+`/help` - show message from in which will be list of commands and that meaning
+`/fb` - send a message for feedback
+`/lessons` - title of the lesson song, link to the video, etc.
+`/chords` - get chords
