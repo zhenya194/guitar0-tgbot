@@ -1,8 +1,8 @@
 # guitar0-tgbot
 
-Guitar 0 TG бот
+ТГ бот Гитары с нуля
 
-## Libraries
+## Библеотеки
 
 Этот проект использует `aiogram`, `pydantic-settings`, `python-dotenv`, `requests`, `sqlite` и Guitar0 API.
 
