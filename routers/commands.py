@@ -6,8 +6,8 @@ import requests
 router = Router()
 lessons_api_url: str = "https://api.guitar0.net/api/v1/lessons/"
 chords_api_url: str = "https://api.guitar0.net/api/v1/chords/"
-response_lessons = requests.get(lessons_api_url)
-response_chords = requests.get(chords_api_url)
+response_lessons = requests.get(lessons_api_url, timeout=30)
+response_chords = requests.get(chords_api_url, timeout=30)
 data_lessons = response_lessons.json()
 data_chords = response_chords.json()
 corrent_lesson: int = 0
