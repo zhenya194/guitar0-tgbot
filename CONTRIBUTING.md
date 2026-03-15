@@ -1,16 +1,16 @@
 # Contributing
 
-Contributions are always welcome, and big and small!
+Мы всегда рады вкладам, как крупным, так и мелким!
 
-## How to contibute(PR)
-1. Make fork of this repository
-2. In your terminal write:
+## Как внести свой вклад(ПР)
+1. Создайте форк этого репозитория
+2. В терминале напишите:
 
 ```sh
-git clone https://github.com/YOUR_USERNAME/NAME_OF_FORK.git
-cd NAME_OF_FORK
+git clone https://github.com/ВАШЕ_ИМЯ/НАЗВАНИЕ_ФОРКА.git
+cd НАЗВАНИЕ_ФОРКА
 git checkout -b NAME_OF_BRANCH
 ```
 
-3. Write code
-4. Send us your PR
+3. Пишите код
+4. Отправляйте ПР
