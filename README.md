@@ -4,7 +4,7 @@ TG бот Гитары с нуля
 
 ## Библеотеки
 
-Этот проект использует `aiogram`, `pydantic-settings`, `python-dotenv`, `requests`, `sqlite` и Guitar0 API.
+Этот проект использует `aiogram`, `python-dotenv`, `sqlite` и Guitar0 API.
 
 Создано на Python 3.14.
 

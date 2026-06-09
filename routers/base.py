@@ -1,16 +1,20 @@
 from aiogram import Router, types
 from aiogram.filters import Command, CommandObject
-from database import db
-import requests
+from db.database import db
+import aiohttp
+import asyncio
 
 router = Router()
 lessons_api_url: str = "https://api.guitar0.net/api/v1/lessons/"
 chords_api_url: str = "https://api.guitar0.net/api/v1/chords/"
-response_lessons = requests.get(lessons_api_url, timeout=30)
-response_chords = requests.get(chords_api_url, timeout=30)
-data_lessons = response_lessons.json()
-data_chords = response_chords.json()
-corrent_lesson: int = 0
+data_lessons = {}
+data_chords = {}
+async def get_data():
+    async with aiohttp.ClientSession() as session:
+        async with session.get(lessons_api_url, timeout=30) as response:
+            data_lessons = await response.json()
+        async with session.get(chords_api_url, timeout=30) as response:
+            data_chords = await response.json()
 
 @router.message(Command("start"))
 async def cmd_start(message: types.Message):
@@ -28,14 +32,13 @@ async def cmd_feedback(message: types.Message, command: CommandObject):
 async def cmd_lessons(message: types.Message, command: CommandObject):
     if not command.args:
         return await message.answer(f"Пожалуста, напишите номер урока после /lessons. Пример: <code>/lessons 18</code>", parse_mode="HTML")
-        return
-    int_commands_arg_lessons: int = int(command.args)
+    int_commands_arg_lessons: int = int(command.args) - 1
 
-    title: str = data_lessons[int_commands_arg_lessons]["title"]
-    video_url: str = data_lessons[int_commands_arg_lessons]["video_url"]
-    song_0: str = data_lessons[int_commands_arg_lessons]["songs"][0]["title"]
-    if len(data_lessons[int_commands_arg_lessons]["songs"]) > 1:
-        song_1: str = data_lessons[int_commands_arg_lessons]["songs"][1]["title"]
+    title: str = data_lessons["results"][int_commands_arg_lessons]["title"]
+    video_url: str = data_lessons["results"][int_commands_arg_lessons]["video_url"]
+    song_0: str = data_lessons["results"][int_commands_arg_lessons]["songs"][0]["title"]
+    if len(data_lessons["results"][int_commands_arg_lessons]["songs"]) > 1:
+        song_1: str = data_lessons["results"][int_commands_arg_lessons]["songs"][1]["title"]
         return await message.answer(f"{title}\n\n"
                                     f"Ссылка на видео: {video_url}\n"
                                     f"Первая песня: {song_0}\n"
@@ -51,7 +54,6 @@ async def cmd_lessons(message: types.Message, command: CommandObject):
 async def cmd_lessons(message: types.Message, command: CommandObject):
     if not command.args:
         return await message.answer(f"Пожалуста, напишите номер акорда после /chords. Пример: <code>/chords 8</code>", parse_mode="HTML")
-        return
     int_commands_arg_chords: int = int(command.args) + 1
     chords_message:str = f"Аккорды № {int_commands_arg_chords}\n\n\n"
     for i in range(len(data_chords[int_commands_arg_chords]["positions"])):
@@ -64,9 +66,9 @@ async def cmd_lessons(message: types.Message, command: CommandObject):
 @router.message(Command("help"))
 async def cmd_help(message: types.Message):
     return await message.answer(f"Commands for <b>Guitar 0 bot</b>:\n\n"
-        f"/start - перезапустить бота\n"
-        f"/help - показать это сообщение\n"
-        f"/fb - отправить сообщение для обратной связи\n"
-        f"/lessons - название песни урока, ссылка на видео и т.п.\n"
-        f"/chords - аккорды",
+        f"<code>/start</code> - перезапустить бота\n"
+        f"<code>/help</code> - показать это сообщение\n"
+        f"<code>/fb</code> - отправить сообщение для обратной связи\n"
+        f"<code>/lessons</code> - название песни урока, ссылка на видео и т.п.\n"
+        f"<code>/chords</code> - аккорды",
         parse_mode="HTML")

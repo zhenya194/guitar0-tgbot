@@ -1,16 +1,15 @@
-import asyncio
-import logging
 from aiogram import Bot, Dispatcher
-from config import config
-from routers import commands
+from dotenv import get_key
+from routers import base
+import asyncio
+
+TOKEN = get_key(".env", "BOT_TOKEN")
 
 async def main():
-    logging.basicConfig(level=logging.INFO)
-    
-    bot = Bot(token=config.bot_token.get_secret_value())
+    bot = Bot(token=TOKEN)
     dp = Dispatcher()
 
-    dp.include_routers(commands.router)
+    dp.include_routers(base.router)
 
     print("Bot had started to work!")
     await bot.delete_webhook(drop_pending_updates=True)
