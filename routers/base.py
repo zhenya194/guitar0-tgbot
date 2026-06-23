@@ -2,7 +2,6 @@ from aiogram import Router, types
 from aiogram.filters import Command, CommandObject
 from db.database import db
 import aiohttp
-import asyncio
 
 router = Router()
 lessons_api_url: str = "https://api.guitar0.net/api/v1/lessons/"
