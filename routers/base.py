@@ -1,5 +1,5 @@
-from aiogram import Router, types
-from aiogram.filters import Command, CommandObject
+from aiogram import Router, types, Bot
+from aiogram.filters import Command, CommandObject, CommandStart
 from db.database import db
 import aiohttp
 
@@ -15,7 +15,7 @@ async def get_data():
         async with session.get(chords_api_url, timeout=30) as response:
             data_chords = await response.json()
 
-@router.message(Command("start"))
+@router.message(CommandStart())
 async def cmd_start(message: types.Message):
     db.add_user(message.from_user.id, message.from_user.full_name)
     await message.answer(f"Здравствуйте, {message.from_user.first_name}! Используйте команду /help что бы получить сообщение с помощью по командах.")

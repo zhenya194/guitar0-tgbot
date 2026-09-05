@@ -23,7 +23,7 @@ class Database:
                 user_id INTEGER,
                 user_name TEXT,
                 text TEXT,
-                timestamp TEXT
+                date TEXT
             )
         """)
 
@@ -37,10 +37,10 @@ class Database:
         self.conn.commit()
 
     def add_feedback(self, user_id, user_name, text):
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.cursor.execute(
-            "INSERT INTO feedback (user_id, user_name, text, timestamp) VALUES (?, ?, ?, ?)",
-            (user_id, user_name, text, timestamp)
+            "INSERT INTO feedback (user_id, user_name, text, date) VALUES (?, ?, ?, ?)",
+            (user_id, user_name, text, date)
         )
         self.conn.commit()
 
