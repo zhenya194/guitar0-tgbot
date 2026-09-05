@@ -4,7 +4,7 @@ from dotenv import get_key
 from routers import base
 import asyncio
 
-TOKEN = get_key(".env", "BOT_TOKEN")
+TOKEN = str(get_key(".env", "BOT_TOKEN"))
 
 async def main():
     bot = Bot(token=TOKEN)
