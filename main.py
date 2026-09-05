@@ -10,7 +10,7 @@ async def main():
     bot = Bot(token=TOKEN)
     dp = Dispatcher()
 
-    dp.include_routers(base.router)
+    dp.include_router(base.router)
 
     await bot.set_my_commands([
         BotCommand(command="start", description="Start the bot"),
