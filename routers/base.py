@@ -43,13 +43,13 @@ async def cmd_lessons(message: types.Message, command: CommandObject):
 async def cmd_lessons(message: types.Message, command: CommandObject):
     if not command.args:
         return await message.answer(f"Пожалуста, напишите номер акорда после /chords. Пример: <code>/chords 8</code>", parse_mode="HTML")
-    int_commands_arg_chords: int = int(command.args) + 1
+    int_commands_arg_chords: int = int(command.args)
     chords_message: str = f"Аккорды № {int_commands_arg_chords}\n\n\n"
-    for i in range(len(data_chords[int_commands_arg_chords]["positions"])):
+    for i in range(len(data_chords["results"][int_commands_arg_chords]["positions"])):
                 chords_message += f"Аккорд {int_commands_arg_chords}.{i}:\n"
-                chords_message += f"Струна {data_chords[int_commands_arg_chords]["positions"][i]["string_number"]}\n"
-                chords_message += f"Лад {data_chords[int_commands_arg_chords]["positions"][i]["fret"]}\n"
-                chords_message += f"Палец {data_chords[int_commands_arg_chords]["positions"][i]["finger"]}\n\n"
+                chords_message += f"Струна {data_chords["results"][int_commands_arg_chords]["positions"][i]["string_number"]}\n"
+                chords_message += f"Лад {data_chords["results"][int_commands_arg_chords]["positions"][i]["fret"]}\n"
+                chords_message += f"Палец {data_chords["results"][int_commands_arg_chords]["positions"][i]["finger"]}\n\n"
     return message.answer(chords_message)
 
 @router.message(Command("help"))
