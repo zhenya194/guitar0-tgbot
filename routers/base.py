@@ -1,19 +1,15 @@
 from aiogram import Router, types, Bot
 from aiogram.filters import Command, CommandObject, CommandStart
 from db.database import db
-import aiohttp
+from db.api import get_api_data
+import asyncio
 
 router = Router()
-lessons_api_url: str = "https://api.guitar0.net/api/v1/lessons/"
-chords_api_url: str = "https://api.guitar0.net/api/v1/chords/"
-data_lessons = {}
-data_chords = {}
-async def get_data():
-    async with aiohttp.ClientSession() as session:
-        async with session.get(lessons_api_url, timeout=30) as response:
-            data_lessons = await response.json()
-        async with session.get(chords_api_url, timeout=30) as response:
-            data_chords = await response.json()
+
+api_data = asyncio.run(get_api_data())
+
+data_lessons = api_data[0]
+data_chords = api_data[1]
 
 @router.message(CommandStart())
 async def cmd_start(message: types.Message):
@@ -31,23 +27,13 @@ async def cmd_feedback(message: types.Message, command: CommandObject):
 async def cmd_lessons(message: types.Message, command: CommandObject):
     if not command.args:
         return await message.answer(f"Пожалуста, напишите номер урока после /lessons. Пример: <code>/lessons 18</code>", parse_mode="HTML")
-    int_commands_arg_lessons: int = int(command.args) - 1
+    int_commands_arg_lessons: int = int(command.args)
 
     title: str = data_lessons["results"][int_commands_arg_lessons]["title"]
     video_url: str = data_lessons["results"][int_commands_arg_lessons]["video_url"]
     song_0: str = data_lessons["results"][int_commands_arg_lessons]["songs"][0]["title"]
-    if len(data_lessons["results"][int_commands_arg_lessons]["songs"]) > 1:
-        song_1: str = data_lessons["results"][int_commands_arg_lessons]["songs"][1]["title"]
-        return await message.answer(f"{title}\n\n"
-                                    f"Ссылка на видео: {video_url}\n"
-                                    f"Первая песня: {song_0}\n"
-                                    f"Вторая песня: {song_1}\n",
-                                    parse_mode="HTML")
-    else:
-        return await message.answer(f"{title}\n\n"
-                                    f"Ссылка на видео: {video_url}\n"
-                                    f"Песня: {song_0}\n",
-                                    parse_mode="HTML")
+    lessons_message = f"Ссылка на видео: {video_url}\n"
+    return message.answer(lessons_message, parse_mode="HTML")
 
 @router.message(Command("chords"))
 async def cmd_lessons(message: types.Message, command: CommandObject):
