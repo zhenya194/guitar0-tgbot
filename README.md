@@ -1,12 +1,12 @@
 # guitar0-tgbot
 
-TG бот Гитары с нуля
+Telegram bot for Guitar 0
 
-## Библеотеки
+## Libraries
 
-Этот проект использует `aiogram`, `python-dotenv`, `sqlite` и Guitar0 API.
+Project stack: `aiogram`, `python-dotenv`, `sqlite` and Guitar 0 API.
 
-Создано на Python 3.14.
+Made on Python 3.14.
 
 > [!NOTE]
-> Это не официальный Guitar 0 tg бот.
+> This is unoffical Guitar 0 Telegram bot.
