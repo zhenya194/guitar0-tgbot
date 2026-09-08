@@ -1,7 +1,7 @@
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
 from dotenv import get_key
-from routers import base
+from routers import base, learn
 import asyncio
 
 TOKEN = str(get_key(".env", "BOT_TOKEN"))
@@ -11,6 +11,7 @@ async def main():
     dp = Dispatcher()
 
     dp.include_router(base.router)
+    dp.include_router(learn.router)
 
     await bot.set_my_commands([
         BotCommand(command="start", description="Start the bot"),
