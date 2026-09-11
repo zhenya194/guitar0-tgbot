@@ -1,4 +1,4 @@
-from aiogram import Router, types, Bot
+from aiogram import Router, types
 from aiogram.filters import Command, CommandObject, CommandStart
 from db.database import db
 from db.api import get_api_data
