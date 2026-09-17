@@ -1,31 +1,39 @@
+import json
+import os
 import aiofiles
 import aiohttp
-import json
 
-lessons_api_url: str = "https://api.guitar0.net/api/v1/lessons/"
-chords_api_url: str = "https://api.guitar0.net/api/v1/chords/"
+API_DIR: str = os.path.join(os.path.dirname(__file__), "api")
+LESSONS_API_URL: str = "https://api.guitar0.net/api/v1/lessons/?limit=100"
+CHORDS_API_URL: str = "https://api.guitar0.net/api/v1/chords/?limit=100"
 
-JSON_PATH: str = "db/api/"
+async def fetch_or_load_cache(session: aiohttp.ClientSession, url: str, filename: str) -> dict:
+    os.makedirs(API_DIR, exist_ok=True)
+    file_path = os.path.join(API_DIR, filename)
 
-async def get_api_data():
+    try:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as response:
+            if response.status == 200:
+                data = await response.json()
+                async with aiofiles.open(file_path, "w", encoding="utf-8") as file:
+                    json_text = json.dumps(data, ensure_ascii=False, indent=4)
+                    await file.write(json_text)
+                return data
+    except Exception:
+        pass
+
+    if os.path.exists(file_path):
+        try:
+            async with aiofiles.open(file_path, "r", encoding="utf-8") as file:
+                content = await file.read()
+                return json.loads(content)
+        except Exception:
+            pass
+
+    return {"results": []}
+
+async def get_api_data() -> list:
     async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(lessons_api_url, timeout=30) as response:
-                data_lessons = await response.json()
-                async with aiofiles.open(f"{JSON_PATH}lessons.json", "w", encoding="utf-8") as file:
-                    json_text = json.dumps(data_lessons, ensure_ascii=False, indent=4)
-                    await file.write(json_text)
-        except:
-            async with aiofiles.open(f"{JSON_PATH}lessons.json", "r", encoding="utf-8") as file:
-                data_lessons = file
-        try:
-            async with session.get(chords_api_url, timeout=30) as response:
-                data_chords = await response.json()
-                async with aiofiles.open(f"{JSON_PATH}chords.json", "w", encoding="utf-8") as file:
-                    json_text = json.dumps(data_chords, ensure_ascii=False, indent=4)
-                    await file.write(json_text)
-        except:
-            async with aiofiles.open(f"{JSON_PATH}chords.json", "r", encoding="utf-8") as file:
-                data_chords = file
-    all_data: list = [data_lessons, data_chords]
-    return all_data
+        data_lessons = await fetch_or_load_cache(session, LESSONS_API_URL, "lessons.json")
+        data_chords = await fetch_or_load_cache(session, CHORDS_API_URL, "chords.json")
+    return [data_lessons, data_chords]
