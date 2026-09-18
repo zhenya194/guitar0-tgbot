@@ -4,6 +4,7 @@ import sys
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
 from dotenv import load_dotenv
+from db.database import db, SQLiteStorage
 from routers import base, learn, admin
 
 load_dotenv()
@@ -16,7 +17,7 @@ async def main():
         sys.exit(1)
 
     bot = Bot(token=TOKEN)
-    dp = Dispatcher()
+    dp = Dispatcher(storage=SQLiteStorage(db))
 
     dp.include_router(base.router)
     dp.include_router(learn.router)

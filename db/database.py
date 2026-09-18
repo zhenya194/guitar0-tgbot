@@ -1,5 +1,9 @@
+import json
 import sqlite3
+import time
 from datetime import datetime
+from typing import Any, Dict, Mapping, Optional
+from aiogram.fsm.storage.base import BaseStorage, StorageKey, StateType, State
 
 class Database:
     def __init__(self, db_name="bot_database.db"):
@@ -24,6 +28,15 @@ class Database:
                     user_id INTEGER PRIMARY KEY,
                     full_name TEXT,
                     added_at TEXT
+                )
+            """)
+
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS fsm_data (
+                    key TEXT PRIMARY KEY,
+                    state TEXT,
+                    data TEXT,
+                    updated_at REAL
                 )
             """)
 
@@ -83,3 +96,114 @@ class Database:
         ]
 
 db = Database()
+
+
+DEFAULT_TTL_SECONDS = 48 * 3600  # 48 hours in seconds
+
+
+class SQLiteStorage(BaseStorage):
+    """
+    Persistent FSM Storage implementation using SQLite.
+    Stores state and state data with an expiration timestamp (TTL = 48 hours).
+    """
+
+    def __init__(self, db_instance: Database = db, ttl_seconds: int = DEFAULT_TTL_SECONDS):
+        self.db = db_instance
+        self.ttl_seconds = ttl_seconds
+
+    def _key_to_str(self, key: StorageKey) -> str:
+        return f"{key.bot_id}:{key.chat_id}:{key.user_id}:{key.thread_id or 0}:{key.destiny}"
+
+    def _cleanup_expired(self):
+        cutoff = time.time() - self.ttl_seconds
+        with self.db.conn:
+            self.db.conn.execute("DELETE FROM fsm_data WHERE updated_at < ?", (cutoff,))
+
+    async def set_state(self, key: StorageKey, state: StateType = None) -> None:
+        self._cleanup_expired()
+        key_str = self._key_to_str(key)
+        state_str = state.state if isinstance(state, State) else (str(state) if state is not None else None)
+
+        now = time.time()
+        with self.db.conn:
+            cursor = self.db.conn.execute("SELECT data FROM fsm_data WHERE key = ?", (key_str,))
+            row = cursor.fetchone()
+            if row is None:
+                if state_str is not None:
+                    self.db.conn.execute(
+                        "INSERT INTO fsm_data (key, state, data, updated_at) VALUES (?, ?, ?, ?)",
+                        (key_str, state_str, "{}", now),
+                    )
+            else:
+                data_str = row[0]
+                if state_str is None and (not data_str or data_str == "{}"):
+                    self.db.conn.execute("DELETE FROM fsm_data WHERE key = ?", (key_str,))
+                else:
+                    self.db.conn.execute(
+                        "UPDATE fsm_data SET state = ?, updated_at = ? WHERE key = ?",
+                        (state_str, now, key_str),
+                    )
+
+    async def get_state(self, key: StorageKey) -> Optional[str]:
+        self._cleanup_expired()
+        key_str = self._key_to_str(key)
+        cursor = self.db.conn.execute("SELECT state, updated_at FROM fsm_data WHERE key = ?", (key_str,))
+        row = cursor.fetchone()
+        if not row:
+            return None
+
+        state_str, updated_at = row
+        if time.time() - updated_at > self.ttl_seconds:
+            with self.db.conn:
+                self.db.conn.execute("DELETE FROM fsm_data WHERE key = ?", (key_str,))
+            return None
+
+        return state_str
+
+    async def set_data(self, key: StorageKey, data: Mapping[str, Any]) -> None:
+        self._cleanup_expired()
+        key_str = self._key_to_str(key)
+        data_str = json.dumps(dict(data), ensure_ascii=False)
+        now = time.time()
+
+        with self.db.conn:
+            cursor = self.db.conn.execute("SELECT state FROM fsm_data WHERE key = ?", (key_str,))
+            row = cursor.fetchone()
+            if row is None:
+                if data:
+                    self.db.conn.execute(
+                        "INSERT INTO fsm_data (key, state, data, updated_at) VALUES (?, ?, ?, ?)",
+                        (key_str, None, data_str, now),
+                    )
+            else:
+                state_str = row[0]
+                if state_str is None and not data:
+                    self.db.conn.execute("DELETE FROM fsm_data WHERE key = ?", (key_str,))
+                else:
+                    self.db.conn.execute(
+                        "UPDATE fsm_data SET data = ?, updated_at = ? WHERE key = ?",
+                        (data_str, now, key_str),
+                    )
+
+    async def get_data(self, key: StorageKey) -> dict[str, Any]:
+        self._cleanup_expired()
+        key_str = self._key_to_str(key)
+        cursor = self.db.conn.execute("SELECT data, updated_at FROM fsm_data WHERE key = ?", (key_str,))
+        row = cursor.fetchone()
+        if not row:
+            return {}
+
+        data_str, updated_at = row
+        if time.time() - updated_at > self.ttl_seconds:
+            with self.db.conn:
+                self.db.conn.execute("DELETE FROM fsm_data WHERE key = ?", (key_str,))
+            return {}
+
+        try:
+            return json.loads(data_str) if data_str else {}
+        except json.JSONDecodeError:
+            return {}
+
+    async def close(self) -> None:
+        pass
+
