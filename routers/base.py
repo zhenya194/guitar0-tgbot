@@ -22,9 +22,10 @@ def get_main_keyboard() -> ReplyKeyboardMarkup:
     )
     builder.row(
         KeyboardButton(text="✍️ Обратная связь"),
-        KeyboardButton(text="❓ Справка")
+        KeyboardButton(text="ℹ️ Команды")
     )
     return builder.as_markup(resize_keyboard=True)
+
 
 
 @router.message(CommandStart())
@@ -81,7 +82,7 @@ async def process_feedback(message: types.Message, state: FSMContext):
     await message.answer("✅ Спасибо за обратную связь!", reply_markup=get_main_keyboard())
 
 
-@router.message(F.text == "❓ Справка")
+@router.message(F.text.in_({"ℹ️ Команды", "Команды", "❓ Справка"}))
 @router.message(Command("help"))
 async def cmd_help(message: types.Message):
     return await message.answer(

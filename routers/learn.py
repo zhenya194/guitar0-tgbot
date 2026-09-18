@@ -150,7 +150,7 @@ async def show_lesson(message: types.Message, query: str):
     arg = query.strip()
     if not arg.isdigit():
         return await message.answer(
-            "Пожалуйста, укажите корректный номер урока (число). Пример: 1"
+            "Пожалуйста, укажите корректный номер урока (число). Наример: 1"
         )
 
     lesson_idx = int(arg)
@@ -180,9 +180,6 @@ async def show_lesson(message: types.Message, query: str):
     builder = InlineKeyboardBuilder()
 
     top_buttons = []
-    if video_url:
-        watch_url = get_watch_url(video_url)
-        top_buttons.append(InlineKeyboardButton(text="▶️ Видео", url=watch_url))
 
     for i, song in enumerate(songs):
         song_title = song.get("title", "").strip()
@@ -200,7 +197,7 @@ async def show_lesson(message: types.Message, query: str):
             continue
         builder.row(
             InlineKeyboardButton(
-                text=f"▶️ В реальном времени: {song_title}",
+                text=f"⚡️ В реальном времени: {song_title}",
                 callback_data=f"speed:{lesson_idx}:{i}",
             )
         )
