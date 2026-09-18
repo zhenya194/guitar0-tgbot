@@ -1,4 +1,3 @@
-﻿import os
 from aiogram import F, Router, types
 from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
@@ -25,31 +24,13 @@ class AdminState(StatesGroup):
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _get_super_admin_ids() -> set[int]:
-    """Return the set of superadmin IDs defined in SUPER_ADMIN_ID env variable."""
-    raw = os.getenv("SUPER_ADMIN_ID", "")
-    ids: set[int] = set()
-    for part in raw.split(","):
-        part = part.strip()
-        if part.isdigit():
-            ids.add(int(part))
-    return ids
-
-
 def is_admin(user_id: int) -> bool:
-    """Return True if the user is a superadmin OR is listed in the admins DB table."""
-    if user_id in _get_super_admin_ids():
-        return True
+    """Return True if the user is listed in the admins DB table."""
     return db.is_admin(user_id)
 
 
-def is_superadmin(user_id: int) -> bool:
-    """Return True only for superadmins (can add/remove other admins)."""
-    return user_id in _get_super_admin_ids()
-
-
-def _build_admin_keyboard(user_id: int) -> types.InlineKeyboardMarkup:
-    """Build inline keyboard for admin panel based on user role."""
+def _build_admin_keyboard() -> types.InlineKeyboardMarkup:
+    """Build inline keyboard for admin panel."""
     builder = InlineKeyboardBuilder()
 
     builder.row(
@@ -58,12 +39,10 @@ def _build_admin_keyboard(user_id: int) -> types.InlineKeyboardMarkup:
     builder.row(
         InlineKeyboardButton(text="👥 Список администраторов", callback_data="adm:list")
     )
-
-    if is_superadmin(user_id):
-        builder.row(
-            InlineKeyboardButton(text="➕ Добавить администратора", callback_data="adm:add"),
-            InlineKeyboardButton(text="➖ Удалить администратора", callback_data="adm:remove"),
-        )
+    builder.row(
+        InlineKeyboardButton(text="➕ Добавить администратора", callback_data="adm:add"),
+        InlineKeyboardButton(text="➖ Удалить администратора", callback_data="adm:remove"),
+    )
 
     return builder.as_markup()
 
@@ -83,15 +62,11 @@ async def cmd_admin(message: types.Message, state: FSMContext):
 
     await state.clear()
 
-    superadmin_ids = _get_super_admin_ids()
-    role = "👑 Суперадмин" if user_id in superadmin_ids else "🔑 Администратор"
-
     await message.answer(
-        f"🛠 <b>Панель администратора</b>\n\n"
-        f"Ваша роль: {role}\n\n"
+        "🛠 <b>Панель администратора</b>\n\n"
         "Выберите действие:",
         parse_mode="HTML",
-        reply_markup=_build_admin_keyboard(user_id),
+        reply_markup=_build_admin_keyboard(),
     )
 
 
@@ -119,12 +94,12 @@ async def cb_reload(callback: types.CallbackQuery):
             f"📚 Уроков: <b>{lessons_count}</b>\n"
             f"🎸 Аккордов: <b>{chords_count}</b>",
             parse_mode="HTML",
-            reply_markup=_build_admin_keyboard(callback.from_user.id),
+            reply_markup=_build_admin_keyboard(),
         )
     except Exception as e:
         await callback.message.answer(
             f"❌ Ошибка при загрузке данных: {e}",
-            reply_markup=_build_admin_keyboard(callback.from_user.id),
+            reply_markup=_build_admin_keyboard(),
         )
 
 
@@ -142,26 +117,17 @@ async def cb_list(callback: types.CallbackQuery):
 
     await callback.answer()
 
-    superadmin_ids = _get_super_admin_ids()
     lines: list[str] = ["👥 <b>Список администраторов:</b>\n"]
-
-    if superadmin_ids:
-        lines.append("👑 <b>Суперадмины:</b>")
-        for sid in sorted(superadmin_ids):
-            lines.append(f"  • <code>{sid}</code>")
-        lines.append("")
 
     db_admins = db.get_all_admins()
     if db_admins:
-        lines.append("🔑 <b>Администраторы:</b>")
         for admin in db_admins:
             name = admin["full_name"] or "—"
             added = admin["added_at"]
             uid = admin["user_id"]
-            marker = " 👑" if uid in superadmin_ids else ""
-            lines.append(f"  • <code>{uid}</code> — {name} (добавлен: {added}){marker}")
+            lines.append(f"  • <code>{uid}</code> — {name} (добавлен: {added})")
     else:
-        lines.append("🔑 <b>Администраторы:</b> пусто")
+        lines.append("Администраторов нет.")
 
     back_builder = InlineKeyboardBuilder()
     back_builder.row(InlineKeyboardButton(text="◀️ Назад", callback_data="adm:back"))
@@ -182,8 +148,8 @@ async def cb_add_start(callback: types.CallbackQuery, state: FSMContext):
     if not callback.from_user or not callback.message:
         return await callback.answer()
 
-    if not is_superadmin(callback.from_user.id):
-        return await callback.answer("⛔ Только суперадмин.", show_alert=True)
+    if not is_admin(callback.from_user.id):
+        return await callback.answer("⛔ Нет доступа.", show_alert=True)
 
     await callback.answer()
     await state.set_state(AdminState.waiting_add_id)
@@ -209,14 +175,6 @@ async def fsm_add_id(message: types.Message, state: FSMContext):
         return await message.answer("❌ Введите корректный Telegram ID (только цифры).")
 
     new_id = int(text)
-
-    if new_id in _get_super_admin_ids():
-        await state.clear()
-        return await message.answer(
-            f"ℹ️ Пользователь <code>{new_id}</code> уже является суперадмином.",
-            parse_mode="HTML",
-            reply_markup=_build_admin_keyboard(message.from_user.id),
-        )
 
     await state.update_data(new_admin_id=new_id)
     await state.set_state(AdminState.waiting_add_name)
@@ -251,7 +209,7 @@ async def fsm_add_name(message: types.Message, state: FSMContext):
     await message.answer(
         text,
         parse_mode="HTML",
-        reply_markup=_build_admin_keyboard(message.from_user.id),
+        reply_markup=_build_admin_keyboard(),
     )
 
 
@@ -264,20 +222,17 @@ async def cb_remove_start(callback: types.CallbackQuery, state: FSMContext):
     if not callback.from_user or not callback.message:
         return await callback.answer()
 
-    if not is_superadmin(callback.from_user.id):
-        return await callback.answer("⛔ Только суперадмин.", show_alert=True)
+    if not is_admin(callback.from_user.id):
+        return await callback.answer("⛔ Нет доступа.", show_alert=True)
 
     await callback.answer()
 
-    # Show list of removable (DB) admins with buttons
     db_admins = db.get_all_admins()
-    superadmin_ids = _get_super_admin_ids()
 
     builder = InlineKeyboardBuilder()
 
-    removable = [a for a in db_admins if a["user_id"] not in superadmin_ids]
-    if removable:
-        for admin in removable:
+    if db_admins:
+        for admin in db_admins:
             name = admin["full_name"] or "Без имени"
             uid = admin["user_id"]
             builder.row(
@@ -288,8 +243,8 @@ async def cb_remove_start(callback: types.CallbackQuery, state: FSMContext):
             )
     else:
         await callback.message.answer(
-            "ℹ️ Нет администраторов для удаления (БД пуста или все являются суперадминами).",
-            reply_markup=_build_admin_keyboard(callback.from_user.id),
+            "ℹ️ Нет администраторов для удаления (БД пуста).",
+            reply_markup=_build_admin_keyboard(),
         )
         return
 
@@ -308,8 +263,8 @@ async def cb_remove_confirm(callback: types.CallbackQuery):
     if not callback.from_user or not callback.message:
         return await callback.answer()
 
-    if not is_superadmin(callback.from_user.id):
-        return await callback.answer("⛔ Только суперадмин.", show_alert=True)
+    if not is_admin(callback.from_user.id):
+        return await callback.answer("⛔ Нет доступа.", show_alert=True)
 
     target_id = int(callback.data.split(":")[-1])
 
@@ -324,7 +279,7 @@ async def cb_remove_confirm(callback: types.CallbackQuery):
     await callback.message.answer(
         text,
         parse_mode="HTML",
-        reply_markup=_build_admin_keyboard(callback.from_user.id),
+        reply_markup=_build_admin_keyboard(),
     )
 
 
@@ -333,8 +288,8 @@ async def cb_remove_manual(callback: types.CallbackQuery, state: FSMContext):
     if not callback.from_user or not callback.message:
         return await callback.answer()
 
-    if not is_superadmin(callback.from_user.id):
-        return await callback.answer("⛔ Только суперадмин.", show_alert=True)
+    if not is_admin(callback.from_user.id):
+        return await callback.answer("⛔ Нет доступа.", show_alert=True)
 
     await callback.answer()
     await state.set_state(AdminState.waiting_remove_id)
@@ -361,14 +316,6 @@ async def fsm_remove_id(message: types.Message, state: FSMContext):
     target_id = int(text)
     await state.clear()
 
-    if target_id in _get_super_admin_ids():
-        return await message.answer(
-            f"⛔ Нельзя удалить суперадмина <code>{target_id}</code>.\n"
-            "Суперадмины управляются через <code>SUPER_ADMIN_ID</code> в .env.",
-            parse_mode="HTML",
-            reply_markup=_build_admin_keyboard(message.from_user.id),
-        )
-
     removed = db.remove_admin(target_id)
     if removed:
         result_text = f"✅ Администратор <code>{target_id}</code> удалён."
@@ -378,7 +325,7 @@ async def fsm_remove_id(message: types.Message, state: FSMContext):
     await message.answer(
         result_text,
         parse_mode="HTML",
-        reply_markup=_build_admin_keyboard(message.from_user.id),
+        reply_markup=_build_admin_keyboard(),
     )
 
 
@@ -397,15 +344,11 @@ async def cb_back(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.clear()
 
-    superadmin_ids = _get_super_admin_ids()
-    role = "👑 Суперадмин" if callback.from_user.id in superadmin_ids else "🔑 Администратор"
-
     await callback.message.answer(
-        f"🛠 <b>Панель администратора</b>\n\n"
-        f"Ваша роль: {role}\n\n"
+        "🛠 <b>Панель администратора</b>\n\n"
         "Выберите действие:",
         parse_mode="HTML",
-        reply_markup=_build_admin_keyboard(callback.from_user.id),
+        reply_markup=_build_admin_keyboard(),
     )
 
 
@@ -421,15 +364,11 @@ async def cb_cancel(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer("Отменено")
     await state.clear()
 
-    superadmin_ids = _get_super_admin_ids()
-    role = "👑 Суперадмин" if callback.from_user.id in superadmin_ids else "🔑 Администратор"
-
     await callback.message.answer(
-        f"🛠 <b>Панель администратора</b>\n\n"
-        f"Ваша роль: {role}\n\n"
+        "🛠 <b>Панель администратора</b>\n\n"
         "Выберите действие:",
         parse_mode="HTML",
-        reply_markup=_build_admin_keyboard(callback.from_user.id),
+        reply_markup=_build_admin_keyboard(),
     )
 
 
@@ -442,8 +381,8 @@ async def cmd_admin_add(message: types.Message, command: CommandObject):
     if not message.from_user:
         return
 
-    if not is_superadmin(message.from_user.id):
-        return await message.answer("⛔ Только суперадмин может добавлять администраторов.")
+    if not is_admin(message.from_user.id):
+        return await message.answer("⛔ У вас нет доступа к панели администратора.")
 
     if not command.args:
         return await message.answer(
@@ -460,12 +399,6 @@ async def cmd_admin_add(message: types.Message, command: CommandObject):
         return await message.answer("❌ user_id должен быть числом.")
 
     new_admin_id = int(user_id_str)
-
-    if new_admin_id in _get_super_admin_ids():
-        return await message.answer(
-            f"ℹ️ Пользователь <code>{new_admin_id}</code> уже является суперадмином.",
-            parse_mode="HTML",
-        )
 
     added = db.add_admin(new_admin_id, name)
     if added:
@@ -485,8 +418,8 @@ async def cmd_admin_remove(message: types.Message, command: CommandObject):
     if not message.from_user:
         return
 
-    if not is_superadmin(message.from_user.id):
-        return await message.answer("⛔ Только суперадмин может удалять администраторов.")
+    if not is_admin(message.from_user.id):
+        return await message.answer("⛔ У вас нет доступа к панели администратора.")
 
     if not command.args:
         return await message.answer(
@@ -500,13 +433,6 @@ async def cmd_admin_remove(message: types.Message, command: CommandObject):
         return await message.answer("❌ user_id должен быть числом.")
 
     target_id = int(user_id_str)
-
-    if target_id in _get_super_admin_ids():
-        return await message.answer(
-            f"⛔ Нельзя удалить суперадмина <code>{target_id}</code> через эту команду.\n"
-            "Суперадмины управляются через <code>SUPER_ADMIN_ID</code> в файле .env.",
-            parse_mode="HTML",
-        )
 
     removed = db.remove_admin(target_id)
     if removed:
@@ -525,26 +451,17 @@ async def cmd_admin_list(message: types.Message):
     if not message.from_user or not is_admin(message.from_user.id):
         return await message.answer("⛔ У вас нет доступа к панели администратора.")
 
-    superadmin_ids = _get_super_admin_ids()
     lines: list[str] = ["👥 <b>Список администраторов:</b>\n"]
-
-    if superadmin_ids:
-        lines.append("👑 <b>Суперадмины:</b>")
-        for sid in sorted(superadmin_ids):
-            lines.append(f"  • <code>{sid}</code>")
-        lines.append("")
 
     db_admins = db.get_all_admins()
     if db_admins:
-        lines.append("🔑 <b>Администраторы:</b>")
         for admin in db_admins:
             name = admin["full_name"] or "—"
             added = admin["added_at"]
             uid = admin["user_id"]
-            marker = " 👑" if uid in superadmin_ids else ""
-            lines.append(f"  • <code>{uid}</code> — {name} (добавлен: {added}){marker}")
+            lines.append(f"  • <code>{uid}</code> — {name} (добавлен: {added})")
     else:
-        lines.append("🔑 <b>Администраторы:</b> пусто")
+        lines.append("Администраторов нет.")
 
     await message.answer("\n".join(lines), parse_mode="HTML")
 

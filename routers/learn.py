@@ -523,13 +523,16 @@ async def show_chord(message: types.Message, query: str):
 
 
 
+@router.message(F.text == "📚 Уроки")
 @router.message(Command("lessons"))
-async def cmd_lessons(message: types.Message, command: CommandObject, state: FSMContext):
-    if command.args:
-        await state.clear()
+async def cmd_lessons(message: types.Message, command: CommandObject = None, state: FSMContext = None):
+    if command and command.args:
+        if state:
+            await state.clear()
         return await show_lesson(message, command.args)
 
-    await state.set_state(LearnState.waiting_for_lesson)
+    if state:
+        await state.set_state(LearnState.waiting_for_lesson)
     await message.answer(
         "📚 Введите номер урока, который вы хотите посмотреть (например: 1) (для отмены отправьте /cancel):"
     )
@@ -549,13 +552,16 @@ async def process_lesson_input(message: types.Message, state: FSMContext):
     await show_lesson(message, text)
 
 
+@router.message(F.text == "🎸 Аккорды")
 @router.message(Command("chords"))
-async def cmd_chords(message: types.Message, command: CommandObject, state: FSMContext):
-    if command.args:
-        await state.clear()
+async def cmd_chords(message: types.Message, command: CommandObject = None, state: FSMContext = None):
+    if command and command.args:
+        if state:
+            await state.clear()
         return await show_chord(message, command.args)
 
-    await state.set_state(LearnState.waiting_for_chord)
+    if state:
+        await state.set_state(LearnState.waiting_for_chord)
     await message.answer(
         "🎸 Введите название или номер аккорда (например: Am, C, Em) (для отмены отправьте /cancel):"
     )
@@ -573,4 +579,5 @@ async def process_chord_input(message: types.Message, state: FSMContext):
 
     await state.clear()
     await show_chord(message, text)
+
 
