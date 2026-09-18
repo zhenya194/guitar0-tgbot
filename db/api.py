@@ -37,3 +37,11 @@ async def get_api_data() -> list:
         data_lessons = await fetch_or_load_cache(session, LESSONS_API_URL, "lessons.json")
         data_chords = await fetch_or_load_cache(session, CHORDS_API_URL, "chords.json")
     return [data_lessons, data_chords]
+
+
+async def get_lesson_detail(lesson_uuid: str) -> dict:
+    url = f"https://api.guitar0.net/api/v1/lessons/{lesson_uuid}/"
+    filename = f"lesson_{lesson_uuid}.json"
+    async with aiohttp.ClientSession() as session:
+        return await fetch_or_load_cache(session, url, filename)
+

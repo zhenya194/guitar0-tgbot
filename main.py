@@ -4,7 +4,7 @@ import sys
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
 from dotenv import load_dotenv
-from routers import base, learn
+from routers import base, learn, admin
 
 load_dotenv()
 
@@ -20,6 +20,7 @@ async def main():
 
     dp.include_router(base.router)
     dp.include_router(learn.router)
+    dp.include_router(admin.router)
 
     print("Загрузка данных уроков и аккордов...")
     await learn.load_data()
@@ -30,6 +31,8 @@ async def main():
         BotCommand(command="fb", description="Отправить обратную связь"),
         BotCommand(command="lessons", description="Информация об уроке"),
         BotCommand(command="chords", description="Аппликатура аккорда"),
+        BotCommand(command="cancel", description="Отменить текущее действие"),
+        BotCommand(command="admin", description="Панель администратора"),
     ])
 
     print("Бот успешно запущен!")
