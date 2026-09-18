@@ -24,6 +24,9 @@ def get_main_keyboard() -> ReplyKeyboardMarkup:
         KeyboardButton(text="✍️ Обратная связь"),
         KeyboardButton(text="ℹ️ Команды")
     )
+    builder.row(
+        KeyboardButton(text="ℹ️ О проекте")
+    )
     return builder.as_markup(resize_keyboard=True)
 
 
@@ -89,10 +92,22 @@ async def cmd_help(message: types.Message):
         "Команды бота Guitar 0:\n\n"
         "/start - перезапустить бота\n"
         "/help - показать это сообщение\n"
+        "/about - о проекте\n"
         "/fb [сообщение] - отправить обратную связь\n"
         "/lessons [номер] - информация об уроке\n"
         "/chords [аккорд] - аппликатура аккорда\n"
         "/cancel - отменить текущий ввод",
+        reply_markup=get_main_keyboard()
+    )
+
+
+@router.message(F.text.in_({"ℹ️ О проекте", "О проекте"}))
+@router.message(Command("about"))
+async def cmd_about(message: types.Message):
+    logo = types.FSInputFile("db/logo.png")
+    await message.answer_photo(
+        photo=logo,
+        caption="Guitar 0",
         reply_markup=get_main_keyboard()
     )
 

@@ -32,6 +32,7 @@ async def main():
         BotCommand(command="lessons", description="Информация об уроке"),
         BotCommand(command="chords", description="Аппликатура аккорда"),
         BotCommand(command="cancel", description="Отменить текущее действие"),
+        BotCommand(command="about", description="О проекте"),
         BotCommand(command="admin", description="Панель администратора"),
     ])
 
