@@ -254,7 +254,7 @@ def get_chords_keyboard() -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     for title in titles:
         builder.button(text=title)
-    builder.adjust(4)
+    builder.adjust(10)
 
     return ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="❌ Отмена")], *builder.export()],
