@@ -5,8 +5,8 @@ from aiogram import F, Router, types
 from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import InlineKeyboardButton
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.types import InlineKeyboardButton, KeyboardButton, ReplyKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from db.api import get_api_data, get_lesson_detail
 from routers.base import get_cancel_keyboard, get_main_keyboard
@@ -67,7 +67,7 @@ def render_chord_svg(svg_code: str) -> bytes:
     if vb_match:
         w = int(vb_match.group(1)) * 4
         h = int(vb_match.group(2)) * 4
-        svg = re.sub(r'<svg\s+', f'<svg width="{w}" height="{h}" ', svg, count=1)
+        svg = re.sub(r"<svg\s+", f'<svg width="{w}" height="{h}" ', svg, count=1)
 
     return resvg_py.svg_to_bytes(svg)
 
@@ -105,8 +105,7 @@ async def show_lesson(message: types.Message, query: str) -> bool:
     arg = query.strip()
     if not arg.isdigit():
         await message.answer(
-            "Пожалуйста, укажите корректный номер урока (число). Наример: 1",
-            reply_markup=get_main_keyboard()
+            "Пожалуйста, укажите корректный номер урока (число). Наример: 1", reply_markup=get_main_keyboard()
         )
         return False
 
@@ -115,7 +114,7 @@ async def show_lesson(message: types.Message, query: str) -> bool:
         max_idx = len(results) - 1 if results else 0
         await message.answer(
             f"Урок с номером {lesson_idx} не найден. Доступные номера: от 0 до {max_idx}.",
-            reply_markup=get_main_keyboard()
+            reply_markup=get_main_keyboard(),
         )
         return False
 
@@ -148,7 +147,7 @@ async def show_lesson(message: types.Message, query: str) -> bool:
         top_buttons.append(InlineKeyboardButton(text=btn_text, callback_data=f"song:{lesson_idx}:{i}"))
 
     for j in range(0, len(top_buttons), 2):
-        builder.row(*top_buttons[j:j+2])
+        builder.row(*top_buttons[j : j + 2])
 
     if top_buttons:
         await message.answer(lessons_message, reply_markup=builder.as_markup())
@@ -215,9 +214,7 @@ async def callback_song(callback: types.CallbackQuery):
 
     if schemes:
         scheme_names = [
-            s.get("inscription") or s.get("title")
-            for s in schemes
-            if (s.get("inscription") or s.get("title"))
+            s.get("inscription") or s.get("title") for s in schemes if (s.get("inscription") or s.get("title"))
         ]
         if scheme_names:
             msg_parts.append(f"🥁 Бой/перебор: {', '.join(scheme_names)}")
@@ -237,10 +234,32 @@ async def callback_song(callback: types.CallbackQuery):
         if len(full_message) <= 4000:
             await callback.message.answer(full_message)
         else:
-            chunks = [full_message[i:i + 3900] for i in range(0, len(full_message), 3900)]
+            chunks = [full_message[i : i + 3900] for i in range(0, len(full_message), 3900)]
             for chunk in chunks:
                 await callback.message.answer(chunk)
 
+
+def get_chords_keyboard() -> ReplyKeyboardMarkup:
+    global data_chords
+    results = data_chords.get("results", [])
+
+    seen: set[str] = set()
+    titles: list[str] = []
+    for chord in results:
+        title = chord.get("title", "").strip()
+        if title and not title.isdigit() and title not in seen:
+            seen.add(title)
+            titles.append(title)
+
+    builder = ReplyKeyboardBuilder()
+    for title in titles:
+        builder.button(text=title)
+    builder.adjust(4)
+
+    return ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Отмена")], *builder.export()],
+        resize_keyboard=True,
+    )
 
 
 async def show_chord(message: types.Message, query: str) -> bool:
@@ -252,10 +271,7 @@ async def show_chord(message: types.Message, query: str) -> bool:
     query = query.strip()
 
     # Поиск по точному названию аккорда (например, "Am", "am", "C", "Em")
-    matched_chords = [
-        chord for chord in results
-        if chord.get("title", "").strip().lower() == query.lower()
-    ]
+    matched_chords = [chord for chord in results if chord.get("title", "").strip().lower() == query.lower()]
 
     # Если точного совпадения нет и введено число, пробуем найти по индексу или ID
     if not matched_chords and query.isdigit():
@@ -263,23 +279,19 @@ async def show_chord(message: types.Message, query: str) -> bool:
         if 0 <= idx < len(results):
             matched_chords = [results[idx]]
         else:
-            matched_chords = [
-                chord for chord in results
-                if chord.get("id") == idx
-            ]
+            matched_chords = [chord for chord in results if chord.get("id") == idx]
 
     # Если всё ещё не найдено, ищем частичное совпадение по названию или описанию
     if not matched_chords:
         matched_chords = [
-            chord for chord in results
+            chord
+            for chord in results
             if query.lower() in chord.get("title", "").lower()
             or query.lower() in chord.get("musical_title", "").lower()
         ]
 
     if not matched_chords:
-        await message.answer(
-            f"❌ Аккорд «{query}» не найден.\nПопробуйте, например: Am, C, Em, D"
-        )
+        await message.answer(f"❌ Аккорд «{query}» не найден.\nПопробуйте, например: Am, C, Em, D")
         return False
 
     total = len(matched_chords)
@@ -317,7 +329,7 @@ async def cmd_lessons(message: types.Message, command: CommandObject = None, sta
     await message.answer(
         "📚 Введите номер урока, который вы хотите посмотреть (например: 1) "
         "(для отмены нажмите «❌ Отмена» или отправьте /cancel):",
-        reply_markup=get_cancel_keyboard()
+        reply_markup=get_cancel_keyboard(),
     )
 
 
@@ -344,12 +356,16 @@ async def cmd_chords(message: types.Message, command: CommandObject = None, stat
             await state.clear()
         return await show_chord(message, command.args)
 
+    if not data_chords.get("results"):
+        await load_data()
+
     if state:
         await state.set_state(LearnState.waiting_for_chord)
     await message.answer(
         "🎸 Введите название или номер аккорда (например: Am, C, Em) "
+        "или выберите его на клавиатуре ниже "
         "(для отмены нажмите «❌ Отмена» или отправьте /cancel):",
-        reply_markup=get_cancel_keyboard()
+        reply_markup=get_chords_keyboard(),
     )
 
 
@@ -366,6 +382,3 @@ async def process_chord_input(message: types.Message, state: FSMContext):
     success = await show_chord(message, text)
     if success:
         await state.clear()
-
-
-

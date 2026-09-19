@@ -8,6 +8,7 @@ API_DIR: str = os.path.join(os.path.dirname(__file__), "api")
 LESSONS_API_URL: str = "https://api.guitar0.net/api/v1/lessons/?limit=100"
 CHORDS_API_URL: str = "https://api.guitar0.net/api/v1/chords/?limit=100"
 
+
 async def fetch_or_load_cache(session: aiohttp.ClientSession, url: str, filename: str) -> dict:
     os.makedirs(API_DIR, exist_ok=True)
     file_path = os.path.join(API_DIR, filename)
@@ -33,6 +34,7 @@ async def fetch_or_load_cache(session: aiohttp.ClientSession, url: str, filename
 
     return {"results": []}
 
+
 async def get_api_data() -> list:
     async with aiohttp.ClientSession() as session:
         data_lessons = await fetch_or_load_cache(session, LESSONS_API_URL, "lessons.json")
@@ -45,4 +47,3 @@ async def get_lesson_detail(lesson_uuid: str) -> dict:
     filename = f"lesson_{lesson_uuid}.json"
     async with aiohttp.ClientSession() as session:
         return await fetch_or_load_cache(session, url, filename)
-

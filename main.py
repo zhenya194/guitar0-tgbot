@@ -13,6 +13,7 @@ load_dotenv()
 
 TOKEN = os.getenv("BOT_TOKEN")
 
+
 async def main():
     if not TOKEN:
         print("Ошибка: BOT_TOKEN не найден в .env файле!")
@@ -28,19 +29,22 @@ async def main():
     print("Загрузка данных уроков и аккордов...")
     await learn.load_data()
 
-    await bot.set_my_commands([
-        BotCommand(command="start", description="Запустить бота"),
-        BotCommand(command="help", description="Показать справку по командам"),
-        BotCommand(command="fb", description="Отправить обратную связь"),
-        BotCommand(command="lessons", description="Информация об уроке"),
-        BotCommand(command="chords", description="Аппликатура аккорда"),
-        BotCommand(command="cancel", description="Отменить текущее действие"),
-        BotCommand(command="admin", description="Панель администратора"),
-    ])
+    await bot.set_my_commands(
+        [
+            BotCommand(command="start", description="Запустить бота"),
+            BotCommand(command="help", description="Показать справку по командам"),
+            BotCommand(command="fb", description="Отправить обратную связь"),
+            BotCommand(command="lessons", description="Информация об уроке"),
+            BotCommand(command="chords", description="Аппликатура аккорда"),
+            BotCommand(command="cancel", description="Отменить текущее действие"),
+            BotCommand(command="admin", description="Панель администратора"),
+        ]
+    )
 
     print("Бот успешно запущен!")
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
+
 
 if __name__ == "__main__":
     try:

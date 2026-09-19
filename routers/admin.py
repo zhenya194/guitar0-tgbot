@@ -15,8 +15,9 @@ router = Router()
 # FSM states for add/remove admin dialogs (triggered via buttons)
 # ---------------------------------------------------------------------------
 
+
 class AdminState(StatesGroup):
-    waiting_add_id   = State()
+    waiting_add_id = State()
     waiting_add_name = State()
     waiting_remove_id = State()
 
@@ -24,6 +25,7 @@ class AdminState(StatesGroup):
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def is_admin(user_id: int) -> bool:
     """Return True if the user is listed in the admins DB table."""
@@ -34,12 +36,8 @@ def _build_admin_keyboard() -> types.InlineKeyboardMarkup:
     """Build inline keyboard for admin panel."""
     builder = InlineKeyboardBuilder()
 
-    builder.row(
-        InlineKeyboardButton(text="🔄 Обновить данные с API", callback_data="adm:reload")
-    )
-    builder.row(
-        InlineKeyboardButton(text="👥 Список администраторов", callback_data="adm:list")
-    )
+    builder.row(InlineKeyboardButton(text="🔄 Обновить данные с API", callback_data="adm:reload"))
+    builder.row(InlineKeyboardButton(text="👥 Список администраторов", callback_data="adm:list"))
     builder.row(
         InlineKeyboardButton(text="➕ Добавить администратора", callback_data="adm:add"),
         InlineKeyboardButton(text="➖ Удалить администратора", callback_data="adm:remove"),
@@ -51,6 +49,7 @@ def _build_admin_keyboard() -> types.InlineKeyboardMarkup:
 # ---------------------------------------------------------------------------
 # /admin — show admin panel with inline keyboard
 # ---------------------------------------------------------------------------
+
 
 @router.message(Command("admin"))
 async def cmd_admin(message: types.Message, state: FSMContext):
@@ -64,8 +63,7 @@ async def cmd_admin(message: types.Message, state: FSMContext):
     await state.clear()
 
     await message.answer(
-        "🛠 <b>Панель администратора</b>\n\n"
-        "Выберите действие:",
+        "🛠 <b>Панель администратора</b>\n\nВыберите действие:",
         parse_mode="HTML",
         reply_markup=_build_admin_keyboard(),
     )
@@ -74,6 +72,7 @@ async def cmd_admin(message: types.Message, state: FSMContext):
 # ---------------------------------------------------------------------------
 # Callback: 🔄 Обновить данные с API
 # ---------------------------------------------------------------------------
+
 
 @router.callback_query(F.data == "adm:reload")
 async def cb_reload(callback: types.CallbackQuery):
@@ -107,6 +106,7 @@ async def cb_reload(callback: types.CallbackQuery):
 # ---------------------------------------------------------------------------
 # Callback: 👥 Список администраторов
 # ---------------------------------------------------------------------------
+
 
 @router.callback_query(F.data == "adm:list")
 async def cb_list(callback: types.CallbackQuery):
@@ -144,6 +144,7 @@ async def cb_list(callback: types.CallbackQuery):
 # Callback: ➕ Добавить администратора (FSM)
 # ---------------------------------------------------------------------------
 
+
 @router.callback_query(F.data == "adm:add")
 async def cb_add_start(callback: types.CallbackQuery, state: FSMContext):
     if not callback.from_user or not callback.message:
@@ -159,8 +160,7 @@ async def cb_add_start(callback: types.CallbackQuery, state: FSMContext):
     cancel_builder.row(InlineKeyboardButton(text="❌ Отмена", callback_data="adm:cancel"))
 
     await callback.message.answer(
-        "➕ <b>Добавление администратора</b>\n\n"
-        "Введите <b>Telegram ID</b> нового администратора (только цифры):",
+        "➕ <b>Добавление администратора</b>\n\nВведите <b>Telegram ID</b> нового администратора (только цифры):",
         parse_mode="HTML",
         reply_markup=cancel_builder.as_markup(),
     )
@@ -217,6 +217,7 @@ async def fsm_add_name(message: types.Message, state: FSMContext):
 # ---------------------------------------------------------------------------
 # Callback: ➖ Удалить администратора (FSM)
 # ---------------------------------------------------------------------------
+
 
 @router.callback_query(F.data == "adm:remove")
 async def cb_remove_start(callback: types.CallbackQuery, state: FSMContext):
@@ -334,6 +335,7 @@ async def fsm_remove_id(message: types.Message, state: FSMContext):
 # Callback: ◀️ Назад — return to main admin panel
 # ---------------------------------------------------------------------------
 
+
 @router.callback_query(F.data == "adm:back")
 async def cb_back(callback: types.CallbackQuery, state: FSMContext):
     if not callback.from_user or not callback.message:
@@ -346,8 +348,7 @@ async def cb_back(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
 
     await callback.message.answer(
-        "🛠 <b>Панель администратора</b>\n\n"
-        "Выберите действие:",
+        "🛠 <b>Панель администратора</b>\n\nВыберите действие:",
         parse_mode="HTML",
         reply_markup=_build_admin_keyboard(),
     )
@@ -356,6 +357,7 @@ async def cb_back(callback: types.CallbackQuery, state: FSMContext):
 # ---------------------------------------------------------------------------
 # Callback: ❌ Отмена (FSM)
 # ---------------------------------------------------------------------------
+
 
 @router.callback_query(F.data == "adm:cancel")
 async def cb_cancel(callback: types.CallbackQuery, state: FSMContext):
@@ -366,8 +368,7 @@ async def cb_cancel(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
 
     await callback.message.answer(
-        "🛠 <b>Панель администратора</b>\n\n"
-        "Выберите действие:",
+        "🛠 <b>Панель администратора</b>\n\nВыберите действие:",
         parse_mode="HTML",
         reply_markup=_build_admin_keyboard(),
     )
@@ -376,6 +377,7 @@ async def cb_cancel(callback: types.CallbackQuery, state: FSMContext):
 # ---------------------------------------------------------------------------
 # /admin_add and /admin_remove still work as text commands
 # ---------------------------------------------------------------------------
+
 
 @router.message(Command("admin_add"))
 async def cmd_admin_add(message: types.Message, command: CommandObject):
@@ -424,8 +426,7 @@ async def cmd_admin_remove(message: types.Message, command: CommandObject):
 
     if not command.args:
         return await message.answer(
-            "ℹ️ Использование: <code>/admin_remove &lt;user_id&gt;</code>\n"
-            "Пример: <code>/admin_remove 123456789</code>",
+            "ℹ️ Использование: <code>/admin_remove &lt;user_id&gt;</code>\nПример: <code>/admin_remove 123456789</code>",
             parse_mode="HTML",
         )
 
@@ -437,9 +438,7 @@ async def cmd_admin_remove(message: types.Message, command: CommandObject):
 
     removed = db.remove_admin(target_id)
     if removed:
-        await message.answer(
-            f"✅ Администратор <code>{target_id}</code> удалён.", parse_mode="HTML"
-        )
+        await message.answer(f"✅ Администратор <code>{target_id}</code> удалён.", parse_mode="HTML")
     else:
         await message.answer(
             f"❌ Пользователь <code>{target_id}</code> не найден среди администраторов БД.",

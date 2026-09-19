@@ -16,14 +16,8 @@ class FeedbackState(StatesGroup):
 
 def get_main_keyboard() -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
-    builder.row(
-        KeyboardButton(text="📚 Уроки"),
-        KeyboardButton(text="🎸 Аккорды")
-    )
-    builder.row(
-        KeyboardButton(text="✍️ Обратная связь"),
-        KeyboardButton(text="ℹ️ Команды")
-    )
+    builder.row(KeyboardButton(text="📚 Уроки"), KeyboardButton(text="🎸 Аккорды"))
+    builder.row(KeyboardButton(text="✍️ Обратная связь"), KeyboardButton(text="ℹ️ Команды"))
     return builder.as_markup(resize_keyboard=True)
 
 
@@ -40,7 +34,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
         first_name = message.from_user.first_name or "пользователь"
         await message.answer(
             f"Здравствуйте, {first_name}! Воспользуйтесь меню ниже или введите /help для получения справки.",
-            reply_markup=get_main_keyboard()
+            reply_markup=get_main_keyboard(),
         )
 
 
@@ -69,7 +63,7 @@ async def cmd_feedback(message: types.Message, command: CommandObject = None, st
     await message.answer(
         "✍️ Пожалуйста, напишите ваш отзыв или предложение "
         "(для отмены нажмите кнопку «❌ Отмена» или отправьте /cancel):",
-        reply_markup=get_cancel_keyboard()
+        reply_markup=get_cancel_keyboard(),
     )
 
 
@@ -99,8 +93,5 @@ async def cmd_help(message: types.Message):
         "/fb [сообщение] - отправить обратную связь\n"
         "/lessons [номер] - информация об уроке\n"
         "/chords [аккорд] - аппликатура аккорда\n",
-        reply_markup=get_main_keyboard()
+        reply_markup=get_main_keyboard(),
     )
-
-
-
