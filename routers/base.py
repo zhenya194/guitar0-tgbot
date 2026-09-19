@@ -2,6 +2,9 @@ from aiogram import F, Router, types
 from aiogram.filters import Command, CommandObject, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
+
 from db.database import db
 
 router = Router()
@@ -10,9 +13,6 @@ router = Router()
 class FeedbackState(StatesGroup):
     waiting_for_feedback = State()
 
-
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 def get_main_keyboard() -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
@@ -24,11 +24,13 @@ def get_main_keyboard() -> ReplyKeyboardMarkup:
         KeyboardButton(text="✍️ Обратная связь"),
         KeyboardButton(text="ℹ️ Команды")
     )
-    builder.row(
-        KeyboardButton(text="ℹ️ О проекте")
-    )
     return builder.as_markup(resize_keyboard=True)
 
+
+def get_cancel_keyboard() -> ReplyKeyboardMarkup:
+    builder = ReplyKeyboardBuilder()
+    builder.row(KeyboardButton(text="❌ Отмена"))
+    return builder.as_markup(resize_keyboard=True)
 
 
 @router.message(CommandStart())
@@ -43,6 +45,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
         )
 
 
+@router.message(F.text == "❌ Отмена")
 @router.message(Command("cancel"))
 async def cmd_cancel(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
@@ -65,7 +68,9 @@ async def cmd_feedback(message: types.Message, command: CommandObject = None, st
     if state:
         await state.set_state(FeedbackState.waiting_for_feedback)
     await message.answer(
-        "✍️ Пожалуйста, напишите ваш отзыв или предложение (для отмены отправьте /cancel):"
+        "✍️ Пожалуйста, напишите ваш отзыв или предложение "
+        "(для отмены нажмите кнопку «❌ Отмена» или отправьте /cancel):",
+        reply_markup=get_cancel_keyboard()
     )
 
 
@@ -92,22 +97,9 @@ async def cmd_help(message: types.Message):
         "Команды бота Guitar 0:\n\n"
         "/start - перезапустить бота\n"
         "/help - показать это сообщение\n"
-        "/about - о проекте\n"
         "/fb [сообщение] - отправить обратную связь\n"
         "/lessons [номер] - информация об уроке\n"
-        "/chords [аккорд] - аппликатура аккорда\n"
-        "/cancel - отменить текущий ввод",
-        reply_markup=get_main_keyboard()
-    )
-
-
-@router.message(F.text.in_({"ℹ️ О проекте", "О проекте"}))
-@router.message(Command("about"))
-async def cmd_about(message: types.Message):
-    logo = types.FSInputFile("db/logo.png")
-    await message.answer_photo(
-        photo=logo,
-        caption="Guitar 0",
+        "/chords [аккорд] - аппликатура аккорда\n",
         reply_markup=get_main_keyboard()
     )
 

@@ -1,9 +1,12 @@
 import json
 import sqlite3
 import time
+from collections.abc import Mapping
 from datetime import datetime
-from typing import Any, Dict, Mapping, Optional
-from aiogram.fsm.storage.base import BaseStorage, StorageKey, StateType, State
+from typing import Any
+
+from aiogram.fsm.storage.base import BaseStorage, State, StateType, StorageKey
+
 
 class Database:
     def __init__(self, db_name="bot_database.db"):
@@ -43,7 +46,7 @@ class Database:
     def add_user(self, user_id, full_name):
         with self.conn:
             self.conn.execute(
-                "INSERT OR IGNORE INTO users (user_id, full_name) VALUES (?, ?)", 
+                "INSERT OR IGNORE INTO users (user_id, full_name) VALUES (?, ?)",
                 (user_id, full_name)
             )
 
@@ -144,7 +147,7 @@ class SQLiteStorage(BaseStorage):
                         (state_str, now, key_str),
                     )
 
-    async def get_state(self, key: StorageKey) -> Optional[str]:
+    async def get_state(self, key: StorageKey) -> str | None:
         self._cleanup_expired()
         key_str = self._key_to_str(key)
         cursor = self.db.conn.execute("SELECT state, updated_at FROM fsm_data WHERE key = ?", (key_str,))

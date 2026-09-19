@@ -1,11 +1,13 @@
 import asyncio
 import os
 import sys
+
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
 from dotenv import load_dotenv
-from db.database import db, SQLiteStorage
-from routers import base, learn, admin
+
+from db.database import SQLiteStorage, db
+from routers import admin, base, learn
 
 load_dotenv()
 
@@ -33,7 +35,6 @@ async def main():
         BotCommand(command="lessons", description="Информация об уроке"),
         BotCommand(command="chords", description="Аппликатура аккорда"),
         BotCommand(command="cancel", description="Отменить текущее действие"),
-        BotCommand(command="about", description="О проекте"),
         BotCommand(command="admin", description="Панель администратора"),
     ])
 

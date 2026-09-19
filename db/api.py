@@ -1,5 +1,6 @@
 import json
 import os
+
 import aiofiles
 import aiohttp
 
@@ -24,7 +25,7 @@ async def fetch_or_load_cache(session: aiohttp.ClientSession, url: str, filename
 
     if os.path.exists(file_path):
         try:
-            async with aiofiles.open(file_path, "r", encoding="utf-8") as file:
+            async with aiofiles.open(file_path, encoding="utf-8") as file:
                 content = await file.read()
                 return json.loads(content)
         except Exception:

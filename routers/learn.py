@@ -1,6 +1,6 @@
 import asyncio
 import re
-from urllib.parse import quote_plus
+
 import resvg_py
 from aiogram import F, Router, types
 from aiogram.filters import Command, CommandObject
@@ -8,7 +8,9 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+
 from db.api import get_api_data, get_lesson_detail
+from routers.base import get_cancel_keyboard, get_main_keyboard
 
 router = Router()
 
@@ -61,10 +63,10 @@ def parse_song_blocks(raw_text: str) -> list[str]:
     raw_blocks = [b.strip() for b in text.split("\n\n") if b.strip()]
     result = []
     for b in raw_blocks:
-        lines = [l.strip() for l in b.split("\n") if l.strip()]
+        lines = [line.strip() for line in b.split("\n") if line.strip()]
         if not lines:
             continue
-        clean_lines = [re.sub(r"^#{1,6}\s*", "", l) for l in lines]
+        clean_lines = [re.sub(r"^#{1,6}\s*", "", line) for line in lines]
         block_text = "\n".join(clean_lines).strip()
         if block_text:
             result.append(block_text)
@@ -262,7 +264,11 @@ async def callback_song(callback: types.CallbackQuery):
         msg_parts.append(f"⏱️ Темп (метроном): {metronome} BPM")
 
     if schemes:
-        scheme_names = [s.get("inscription") or s.get("title") for s in schemes if (s.get("inscription") or s.get("title"))]
+        scheme_names = [
+            s.get("inscription") or s.get("title")
+            for s in schemes
+            if (s.get("inscription") or s.get("title"))
+        ]
         if scheme_names:
             msg_parts.append(f"🥁 Бой/перебор: {', '.join(scheme_names)}")
 
@@ -519,7 +525,6 @@ async def show_chord(message: types.Message, query: str):
         await message.answer(caption)
 
 
-
 @router.message(F.text == "📚 Уроки")
 @router.message(Command("lessons"))
 async def cmd_lessons(message: types.Message, command: CommandObject = None, state: FSMContext = None):
@@ -531,7 +536,9 @@ async def cmd_lessons(message: types.Message, command: CommandObject = None, sta
     if state:
         await state.set_state(LearnState.waiting_for_lesson)
     await message.answer(
-        "📚 Введите номер урока, который вы хотите посмотреть (например: 1) (для отмены отправьте /cancel):"
+        "📚 Введите номер урока, который вы хотите посмотреть (например: 1) "
+        "(для отмены нажмите «❌ Отмена» или отправьте /cancel):",
+        reply_markup=get_cancel_keyboard()
     )
 
 
@@ -541,9 +548,9 @@ async def process_lesson_input(message: types.Message, state: FSMContext):
         return await message.answer("Пожалуйста, введите номер урока текстом.")
 
     text = message.text.strip()
-    if text == "/cancel":
+    if text in {"/cancel", "❌ Отмена"}:
         await state.clear()
-        return await message.answer("❌ Действие отменено.")
+        return await message.answer("❌ Действие отменено.", reply_markup=get_main_keyboard())
 
     await state.clear()
     await show_lesson(message, text)
@@ -560,7 +567,9 @@ async def cmd_chords(message: types.Message, command: CommandObject = None, stat
     if state:
         await state.set_state(LearnState.waiting_for_chord)
     await message.answer(
-        "🎸 Введите название или номер аккорда (например: Am, C, Em) (для отмены отправьте /cancel):"
+        "🎸 Введите название или номер аккорда (например: Am, C, Em) "
+        "(для отмены нажмите «❌ Отмена» или отправьте /cancel):",
+        reply_markup=get_cancel_keyboard()
     )
 
 
@@ -570,11 +579,12 @@ async def process_chord_input(message: types.Message, state: FSMContext):
         return await message.answer("Пожалуйста, введите название аккорда текстом.")
 
     text = message.text.strip()
-    if text == "/cancel":
+    if text in {"/cancel", "❌ Отмена"}:
         await state.clear()
-        return await message.answer("❌ Действие отменено.")
+        return await message.answer("❌ Действие отменено.", reply_markup=get_main_keyboard())
 
     await state.clear()
     await show_chord(message, text)
+
 
 
