@@ -105,7 +105,8 @@ async def show_lesson(message: types.Message, query: str) -> bool:
     arg = query.strip()
     if not arg.isdigit():
         await message.answer(
-            "Пожалуйста, укажите корректный номер урока (число). Наример: 1"
+            "Пожалуйста, укажите корректный номер урока (число). Наример: 1",
+            reply_markup=get_main_keyboard()
         )
         return False
 
@@ -113,7 +114,8 @@ async def show_lesson(message: types.Message, query: str) -> bool:
     if lesson_idx < 0 or lesson_idx >= len(results):
         max_idx = len(results) - 1 if results else 0
         await message.answer(
-            f"Урок с номером {lesson_idx} не найден. Доступные номера: от 0 до {max_idx}."
+            f"Урок с номером {lesson_idx} не найден. Доступные номера: от 0 до {max_idx}.",
+            reply_markup=get_main_keyboard()
         )
         return False
 
@@ -148,10 +150,11 @@ async def show_lesson(message: types.Message, query: str) -> bool:
     for j in range(0, len(top_buttons), 2):
         builder.row(*top_buttons[j:j+2])
 
-    await message.answer(
-        lessons_message,
-        reply_markup=builder.as_markup() if top_buttons else get_main_keyboard()
-    )
+    if top_buttons:
+        await message.answer(lessons_message, reply_markup=builder.as_markup())
+        await message.answer("📋 Главное меню:", reply_markup=get_main_keyboard())
+    else:
+        await message.answer(lessons_message, reply_markup=get_main_keyboard())
 
     return True
 
@@ -310,6 +313,7 @@ async def cmd_lessons(message: types.Message, command: CommandObject = None, sta
 
     if state:
         await state.set_state(LearnState.waiting_for_lesson)
+
     await message.answer(
         "📚 Введите номер урока, который вы хотите посмотреть (например: 1) "
         "(для отмены нажмите «❌ Отмена» или отправьте /cancel):",

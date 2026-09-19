@@ -37,7 +37,6 @@ def get_cancel_keyboard() -> ReplyKeyboardMarkup:
 async def cmd_start(message: types.Message, state: FSMContext):
     await state.clear()
     if message.from_user:
-        db.add_user(message.from_user.id, message.from_user.full_name)
         first_name = message.from_user.first_name or "пользователь"
         await message.answer(
             f"Здравствуйте, {first_name}! Воспользуйтесь меню ниже или введите /help для получения справки.",

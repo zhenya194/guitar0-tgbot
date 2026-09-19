@@ -43,13 +43,6 @@ class Database:
                 )
             """)
 
-    def add_user(self, user_id, full_name):
-        with self.conn:
-            self.conn.execute(
-                "INSERT OR IGNORE INTO users (user_id, full_name) VALUES (?, ?)",
-                (user_id, full_name)
-            )
-
     def add_feedback(self, user_id, user_name, text):
         date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with self.conn:
