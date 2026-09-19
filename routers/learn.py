@@ -9,7 +9,7 @@ from aiogram.types import InlineKeyboardButton, KeyboardButton, ReplyKeyboardMar
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from db.api import get_api_data, get_lesson_detail
-from routers.base import get_cancel_keyboard, get_main_keyboard
+from routers.base import get_main_keyboard
 
 router = Router()
 
@@ -93,6 +93,21 @@ def format_chord(chord: dict, idx: int = 1, total: int = 1, aria_label: str = ""
         return f"{header}\n\n{aria_label}"
 
     return header
+
+
+def get_lessons_keyboard() -> ReplyKeyboardMarkup:
+    global data_lessons
+    results = data_lessons.get("results", [])
+
+    builder = ReplyKeyboardBuilder()
+    for i in range(len(results)):
+        builder.button(text=str(i))
+    builder.adjust(10)
+
+    return ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Отмена")], *builder.export()],
+        resize_keyboard=True,
+    )
 
 
 async def show_lesson(message: types.Message, query: str) -> bool:
@@ -323,13 +338,16 @@ async def cmd_lessons(message: types.Message, command: CommandObject = None, sta
             await state.clear()
         return await show_lesson(message, command.args)
 
+    if not data_lessons.get("results"):
+        await load_data()
+
     if state:
         await state.set_state(LearnState.waiting_for_lesson)
 
     await message.answer(
         "📚 Введите номер урока, который вы хотите посмотреть (например: 1) "
         "(для отмены нажмите «❌ Отмена» или отправьте /cancel):",
-        reply_markup=get_cancel_keyboard(),
+        reply_markup=get_lessons_keyboard(),
     )
 
 

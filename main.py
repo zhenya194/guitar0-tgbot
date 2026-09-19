@@ -36,7 +36,6 @@ async def main():
             BotCommand(command="fb", description="Отправить обратную связь"),
             BotCommand(command="lessons", description="Информация об уроке"),
             BotCommand(command="chords", description="Аппликатура аккорда"),
-            BotCommand(command="cancel", description="Отменить текущее действие"),
             BotCommand(command="admin", description="Панель администратора"),
         ]
     )
