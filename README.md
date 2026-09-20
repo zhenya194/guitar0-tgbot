@@ -1,8 +1,6 @@
+# Guitar 0 Telegram Bot
+
 <div align="center">
-
-# 🎸 Guitar 0 Telegram Bot
-
-**Unofficial Telegram bot for [Guitar 0](https://api.guitar0.net/api/v1/docs/redoc/)** — learn guitar lessons and chord fingerings right in Telegram.
 
 [![CI](https://github.com/zhenya194/guitar0-tgbot/actions/workflows/test.yml/badge.svg)](https://github.com/zhenya194/guitar0-tgbot/actions/workflows/test.yml)
 [![Bandit](https://github.com/zhenya194/guitar0-tgbot/actions/workflows/bandit.yml/badge.svg)](https://github.com/zhenya194/guitar0-tgbot/actions/workflows/bandit.yml)
@@ -13,18 +11,13 @@
 
 </div>
 
-> [!NOTE]
-> This is an **unofficial** Guitar 0 Telegram bot, not affiliated with the Guitar 0 team.
-
 ---
 
 ## ✨ Features
 
 - 📚 **Lessons** — browse and read guitar lessons pulled from the Guitar 0 API
 - 🎸 **Chords** — look up chord fingerings/diagrams on demand
-- ✍️ **Feedback** — send feedback straight from the chat with `/fb`
-- 🛠️ **Admin panel** — manage admins and reload cached lesson/chord data with `/admin`
-- 💾 **Persistent FSM storage** — conversation state is stored in SQLite, not memory
+- ✍️ **Feedback** — send feedback straight from the chat with
 
 ## 🧰 Tech Stack
 
