@@ -2,7 +2,7 @@ import json
 import sqlite3
 import time
 from collections.abc import Mapping
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from aiogram.fsm.storage.base import BaseStorage, State, StateType, StorageKey
@@ -49,6 +49,17 @@ class Database:
                 "INSERT INTO feedback (user_id, user_name, text, date) VALUES (?, ?, ?, ?)",
                 (user_id, user_name, text, date),
             )
+
+    def get_recent_feedback(self, days: int = 30) -> list[dict]:
+        """Return feedback entries from the last `days` days, newest first."""
+        cutoff = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
+        cursor = self.conn.execute(
+            "SELECT user_id, user_name, text, date FROM feedback WHERE date >= ? ORDER BY date DESC",
+            (cutoff,),
+        )
+        return [
+            {"user_id": row[0], "user_name": row[1], "text": row[2], "date": row[3]} for row in cursor.fetchall()
+        ]
 
     # --- Admin management ---
 

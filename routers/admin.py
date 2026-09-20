@@ -1,4 +1,8 @@
+import html
+import os
+
 from aiogram import F, Router, types
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -27,9 +31,44 @@ class AdminState(StatesGroup):
 # ---------------------------------------------------------------------------
 
 
+def _get_env_admin_ids() -> set[int]:
+    """Parse admin IDs from the ADMIN_ID env var (comma/semicolon/space separated)."""
+    raw = os.getenv("ADMIN_ID", "")
+    ids: set[int] = set()
+    for part in raw.replace(";", ",").replace(" ", ",").split(","):
+        part = part.strip()
+        if part.isdigit():
+            ids.add(int(part))
+    return ids
+
+
 def is_admin(user_id: int) -> bool:
-    """Return True if the user is listed in the admins DB table."""
-    return db.is_admin(user_id)
+    """Return True if the user is listed in the admins DB table or the ADMIN_ID env var."""
+    return user_id in _get_env_admin_ids() or db.is_admin(user_id)
+
+
+def _build_admin_list_lines() -> list[str]:
+    """Build display lines for all admins, combining DB admins and env-configured ones."""
+    lines: list[str] = ["👥 <b>Список администраторов:</b>\n"]
+
+    db_admins = db.get_all_admins()
+    db_admin_ids = {admin["user_id"] for admin in db_admins}
+
+    if db_admins:
+        for admin in db_admins:
+            name = admin["full_name"] or "—"
+            added = admin["added_at"]
+            uid = admin["user_id"]
+            lines.append(f"  • <code>{uid}</code> — {name} (добавлен: {added})")
+
+    env_only_ids = _get_env_admin_ids() - db_admin_ids
+    for uid in sorted(env_only_ids):
+        lines.append(f"  • <code>{uid}</code> — из .env (ADMIN_ID)")
+
+    if not db_admins and not env_only_ids:
+        lines.append("Администраторов нет.")
+
+    return lines
 
 
 def _build_admin_keyboard() -> types.InlineKeyboardMarkup:
@@ -42,8 +81,48 @@ def _build_admin_keyboard() -> types.InlineKeyboardMarkup:
         InlineKeyboardButton(text="➕ Добавить администратора", callback_data="adm:add"),
         InlineKeyboardButton(text="➖ Удалить администратора", callback_data="adm:remove"),
     )
+    builder.row(InlineKeyboardButton(text="📋 Посмотреть фидбек", callback_data="adm:feedback"))
 
     return builder.as_markup()
+
+
+ADMIN_PANEL_TEXT = "🛠 <b>Панель администратора</b>\n\nВыберите действие:"
+
+# Telegram message length limit is 4096; keep a safety margin.
+_MESSAGE_CHUNK_LIMIT = 4000
+
+
+async def _replace_message(
+    message: types.Message,
+    text: str,
+    reply_markup: types.InlineKeyboardMarkup,
+) -> None:
+    """Replace the given message's content, editing it in place when possible."""
+    try:
+        await message.edit_text(text, parse_mode="HTML", reply_markup=reply_markup)
+    except TelegramBadRequest:
+        await message.answer(text, parse_mode="HTML", reply_markup=reply_markup)
+
+
+def _chunk_lines(lines: list[str], limit: int = _MESSAGE_CHUNK_LIMIT) -> list[str]:
+    """Group lines into chunks that each stay under the given character limit."""
+    chunks: list[str] = []
+    current: list[str] = []
+    current_len = 0
+
+    for line in lines:
+        line_len = len(line) + 1  # account for the joining newline
+        if current and current_len + line_len > limit:
+            chunks.append("\n".join(current))
+            current = []
+            current_len = 0
+        current.append(line)
+        current_len += line_len
+
+    if current:
+        chunks.append("\n".join(current))
+
+    return chunks or [""]
 
 
 # ---------------------------------------------------------------------------
@@ -82,24 +161,29 @@ async def cb_reload(callback: types.CallbackQuery):
     if not is_admin(callback.from_user.id):
         return await callback.answer("⛔ Нет доступа.", show_alert=True)
 
-    await callback.answer("⏳ Загружаю...")
-    await callback.message.answer("⏳ Загружаю данные с API...")
+    await callback.answer()
+
+    back_builder = InlineKeyboardBuilder()
+    back_builder.row(InlineKeyboardButton(text="◀️ Назад", callback_data="adm:back"))
+
+    await _replace_message(callback.message, "⏳ Загружаю данные с API...", back_builder.as_markup())
 
     try:
         await learn_module.load_data()
         lessons_count = len(learn_module.data_lessons.get("results", []))
         chords_count = len(learn_module.data_chords.get("results", []))
-        await callback.message.answer(
+        await _replace_message(
+            callback.message,
             f"✅ <b>Данные успешно обновлены!</b>\n\n"
             f"📚 Уроков: <b>{lessons_count}</b>\n"
             f"🎸 Аккордов: <b>{chords_count}</b>",
-            parse_mode="HTML",
-            reply_markup=_build_admin_keyboard(),
+            back_builder.as_markup(),
         )
     except Exception as e:
-        await callback.message.answer(
+        await _replace_message(
+            callback.message,
             f"❌ Ошибка при загрузке данных: {e}",
-            reply_markup=_build_admin_keyboard(),
+            back_builder.as_markup(),
         )
 
 
@@ -118,17 +202,7 @@ async def cb_list(callback: types.CallbackQuery):
 
     await callback.answer()
 
-    lines: list[str] = ["👥 <b>Список администраторов:</b>\n"]
-
-    db_admins = db.get_all_admins()
-    if db_admins:
-        for admin in db_admins:
-            name = admin["full_name"] or "—"
-            added = admin["added_at"]
-            uid = admin["user_id"]
-            lines.append(f"  • <code>{uid}</code> — {name} (добавлен: {added})")
-    else:
-        lines.append("Администраторов нет.")
+    lines = _build_admin_list_lines()
 
     back_builder = InlineKeyboardBuilder()
     back_builder.row(InlineKeyboardButton(text="◀️ Назад", callback_data="adm:back"))
@@ -138,6 +212,43 @@ async def cb_list(callback: types.CallbackQuery):
         parse_mode="HTML",
         reply_markup=back_builder.as_markup(),
     )
+
+
+# ---------------------------------------------------------------------------
+# Callback: 📋 Посмотреть фидбек
+# ---------------------------------------------------------------------------
+
+
+@router.callback_query(F.data == "adm:feedback")
+async def cb_feedback(callback: types.CallbackQuery):
+    if not callback.from_user or not callback.message:
+        return await callback.answer()
+
+    if not is_admin(callback.from_user.id):
+        return await callback.answer("⛔ Нет доступа.", show_alert=True)
+
+    await callback.answer()
+
+    feedback_list = db.get_recent_feedback(days=30)
+
+    if feedback_list:
+        lines: list[str] = ["📋 <b>Фидбек за последний месяц:</b>"]
+        for fb in feedback_list:
+            name = html.escape(fb["user_name"] or "—")
+            text = html.escape(fb["text"] or "")
+            date = fb["date"]
+            lines.append(f"\n🗓 <b>{date}</b> — {name}\n{text}")
+    else:
+        lines = ["📋 <b>Фидбек за последний месяц:</b>", "\nФидбека нет."]
+
+    chunks = _chunk_lines(lines)
+
+    back_builder = InlineKeyboardBuilder()
+    back_builder.row(InlineKeyboardButton(text="◀️ Назад", callback_data="adm:back"))
+
+    await _replace_message(callback.message, chunks[0], back_builder.as_markup())
+    for chunk in chunks[1:]:
+        await callback.message.answer(chunk, parse_mode="HTML", reply_markup=back_builder.as_markup())
 
 
 # ---------------------------------------------------------------------------
@@ -347,11 +458,7 @@ async def cb_back(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.clear()
 
-    await callback.message.answer(
-        "🛠 <b>Панель администратора</b>\n\nВыберите действие:",
-        parse_mode="HTML",
-        reply_markup=_build_admin_keyboard(),
-    )
+    await _replace_message(callback.message, ADMIN_PANEL_TEXT, _build_admin_keyboard())
 
 
 # ---------------------------------------------------------------------------
@@ -451,17 +558,7 @@ async def cmd_admin_list(message: types.Message):
     if not message.from_user or not is_admin(message.from_user.id):
         return await message.answer("⛔ У вас нет доступа к панели администратора.")
 
-    lines: list[str] = ["👥 <b>Список администраторов:</b>\n"]
-
-    db_admins = db.get_all_admins()
-    if db_admins:
-        for admin in db_admins:
-            name = admin["full_name"] or "—"
-            added = admin["added_at"]
-            uid = admin["user_id"]
-            lines.append(f"  • <code>{uid}</code> — {name} (добавлен: {added})")
-    else:
-        lines.append("Администраторов нет.")
+    lines = _build_admin_list_lines()
 
     await message.answer("\n".join(lines), parse_mode="HTML")
 
