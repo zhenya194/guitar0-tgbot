@@ -9,6 +9,10 @@ __pycache__/
 venv/
 .venv/
 
+# PDM
+*.pdm-python
+pdm.lock
+
 # Secrets
 .env
 .env.*

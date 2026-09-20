@@ -2,9 +2,9 @@
 
 <div align="center">
 
-[![CI](https://github.com/zhenya194/guitar0-tgbot/actions/workflows/test.yml/badge.svg)](https://github.com/zhenya194/guitar0-tgbot/actions/workflows/test.yml)
-[![Bandit](https://github.com/zhenya194/guitar0-tgbot/actions/workflows/bandit.yml/badge.svg)](https://github.com/zhenya194/guitar0-tgbot/actions/workflows/bandit.yml)
-[![codecov](https://codecov.io/gh/zhenya194/guitar0-tgbot/branch/main/graph/badge.svg)](https://codecov.io/gh/zhenya194/guitar0-tgbot)
+[![CI](https://github.com/guitar0-net/tgbot/actions/workflows/test.yml/badge.svg)](https://github.com/guitar0-net/tgbot/actions/workflows/test.yml)
+[![Bandit](https://github.com/guitar0-net/tgbot/actions/workflows/bandit.yml/badge.svg)](https://github.com/guitar0-net/tgbot/actions/workflows/bandit.yml)
+[![codecov](https://codecov.io/gh/guitar0-net/tgbot/branch/main/graph/badge.svg)](https://codecov.io/gh/guitar0-net/tgbot)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/downloads/)
 [![aiogram 3](https://img.shields.io/badge/aiogram-3.x-2CA5E0.svg)](https://docs.aiogram.dev/)
 [![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)

@@ -1,8 +1,11 @@
-install:
-	pip install -r requirements.txt
+installpdm:
+	pip install --user pdm
 
 install-dev:
-	pip install -r requirements-dev.txt
+	pdm install -G dev
+
+install:
+	pdm install
 
 run:
 	python main.py
