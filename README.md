@@ -33,11 +33,6 @@
 
 ## 🚀 Getting Started
 
-### Prerequisites
-
-- Python 3.13+
-- A Telegram bot token from [@BotFather](https://t.me/BotFather)
-
 ### Installation
 
 ```sh
