@@ -35,6 +35,7 @@ dev = [
     "ruff==0.16.8",
     "pytest==8.4.2",
     "pytest-cov==7.0.0",
+    "pytest-asyncio==1.4.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -69,3 +70,8 @@ exclude_lines = [
     "pragma: no cover",
     "if __name__ == .__main__.:",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+asyncio_mode = "auto"
+testpaths = ["tests"]
