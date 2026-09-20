@@ -19,5 +19,11 @@ venv/
 *.sqlite3
 db/api/*.json
 
+# Testing
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+
 # Other
 .DS_Store

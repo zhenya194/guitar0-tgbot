@@ -34,6 +34,7 @@ dependencies = [
 dev = [
     "ruff==0.16.8",
     "pytest==8.4.2",
+    "pytest-cov==7.0.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -58,3 +59,13 @@ select = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["db", "routers"]
+
+[tool.coverage.run]
+source = ["db", "routers", "main.py"]
+omit = ["*/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]

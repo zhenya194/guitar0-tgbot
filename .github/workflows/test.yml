@@ -25,10 +25,10 @@ jobs:
       - name: Run ruff check
         run: ruff check .
 
-      - name: Run tests
+      - name: Run tests with coverage
         run: |
           set +e
-          pytest
+          pytest --cov=. --cov-report=xml --cov-report=term-missing
           exit_code=$?
           set -e
           if [ $exit_code -eq 5 ]; then
@@ -36,3 +36,11 @@ jobs:
             exit 0
           fi
           exit $exit_code
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          fail_ci_if_error: false
